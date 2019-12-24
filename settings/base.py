@@ -1,6 +1,8 @@
 import json
 import os
 
+AUTH_USER_MODEL = 'account.User'
+
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SECRET_DIR = os.path.join(BASE_DIR, '.secrets')
 
@@ -21,7 +23,8 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
 
     # custom
-    'django_extensions'
+    'django_extensions',
+    'models.account',
 ]
 
 MIDDLEWARE = [
