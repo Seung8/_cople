@@ -29,7 +29,7 @@ class OrderCondition(models.Model):
 
     is_active = models.BooleanField('로직 실행', default=True)
     created_at = models.DateTimeField(auto_now_add=True)
-    stopped_at = models.DateTimeField(blank=True, null=True)
+    modified_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         db_table = 'order_condition'
