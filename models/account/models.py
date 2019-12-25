@@ -37,3 +37,18 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     def __str__(self):
         return '{}({})'.format(self.name, self.email)
+
+
+class UserAPIInfo(models.Model):
+    """
+    API 정보 기록 테이블
+    """
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+
+    access_key = models.CharField(max_length=80)
+    secret_key = models.CharField(max_length=80)
+    is_active = models.BooleanField('활성', default=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    modified_at = models.DateTimeField(auto_now=True)
+    expired_at = models.DateField(blank=True, null=True)

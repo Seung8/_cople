@@ -25,6 +25,7 @@ INSTALLED_APPS = [
     # custom
     'django_extensions',
     'models.account',
+    'models.transaction',
 ]
 
 MIDDLEWARE = [
