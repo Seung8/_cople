@@ -16,6 +16,10 @@ class CustomUserManager(BaseUserManager):
 
     def create_superuser(self, email, password):
         super_user = self.create_user(email, password)
+        super_user.is_admin = True
+        super_user.is_staff = True
+        super_user.is_superuser = True
+        super_user.save()
 
         return super_user
 
@@ -27,6 +31,10 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     joined_at = models.DateTimeField(auto_now_add=True)
     modified_at = models.DateTimeField(auto_now=True)
+
+    is_admin = models.BooleanField(default=False)
+    is_staff = models.BooleanField(default=False)
+    is_superuser = models.BooleanField(default=False)
 
     USERNAME_FIELD = 'email'
 
