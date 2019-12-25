@@ -52,3 +52,9 @@ class UserAPIInfo(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     modified_at = models.DateTimeField(auto_now=True)
     expired_at = models.DateField(blank=True, null=True)
+
+    class Meta:
+        db_table = 'user_api_info'
+
+    def __str__(self):
+        return self.user
