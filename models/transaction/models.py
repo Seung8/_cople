@@ -24,7 +24,7 @@ class OrderCondition(models.Model):
     # 시세 하락 조건
     sank_value = models.IntegerField('하락 값', default=0)
     sank_ratio = models.BooleanField('하락 값 %여부', default=True)
-    buy_amount = ArrayField(verbose_name='매수량(1,2,3... 형태로 입력)')
+    buy_amount = ArrayField(models.IntegerField(), verbose_name='매수량(1,2,3... 형태로 입력)')
     bought_amount = models.IntegerField('총 매수량', default=0)
 
     is_active = models.BooleanField('로직 실행', default=True)
