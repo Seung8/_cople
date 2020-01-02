@@ -50,4 +50,3 @@ class TransactionController:
 
             if not self.condition.is_active:
                 break
-
