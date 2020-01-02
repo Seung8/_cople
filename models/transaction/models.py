@@ -18,12 +18,12 @@ class OrderCondition(models.Model):
     reference_price = models.IntegerField('기준가', default=0)
 
     # 시세 상승 조건
-    gain_value = models.IntegerField('상승 값', default=0)
-    gain_ratio = models.BooleanField('상승값 %여부', default=True)
+    rise_value = models.IntegerField('상승 값', default=0)
+    rise_ratio = models.BooleanField('상승값 %여부', default=True)
 
     # 시세 하락 조건
-    sank_value = models.IntegerField('하락 값', default=0)
-    sank_ratio = models.BooleanField('하락 값 %여부', default=True)
+    fall_value = models.IntegerField('하락 값', default=0)
+    fall_ratio = models.BooleanField('하락 값 %여부', default=True)
     buy_amount = ArrayField(models.IntegerField(), verbose_name='매수량(1,2,3... 형태로 입력)')
     bought_amount = models.IntegerField('총 매수량', default=0)
 

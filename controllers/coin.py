@@ -33,7 +33,7 @@ class CoinController:
                     )
 
             Coin.objects.bulk_create(creatable_items)
-            # todo: 추후 하기 내용은 로그로 대체하여 저장
+            # todo: 추후 로깅으로 대체
             print('{}건의 코인 생성 완료'.format(creatable_items))
             return True
         return False
