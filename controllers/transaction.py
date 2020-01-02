@@ -1,8 +1,5 @@
 import json
-import threading
-
 import requests
-from django.utils import timezone
 
 
 class TransactionController:
