@@ -1,5 +1,5 @@
 from django.conf import settings
-from django.contrib.postgres.fields import ArrayField
+from django.contrib.postgres.fields import ArrayField, JSONField
 from django.db import models
 
 from ..market.models import Coin
@@ -13,8 +13,8 @@ class OrderCondition(models.Model):
     시세 상승으로 인하여 매도(총 구매 개수 -1개)가 일어난 경우
     해당 조건은 비활성화하고 새로운 조건을 생성하여 새로 루프를 실행
     """
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-    coin = models.ForeignKey(Coin, on_delete=models.CASCADE)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='user', on_delete=models.CASCADE)
+    coin = models.ForeignKey(Coin, related_name='coin', on_delete=models.CASCADE)
     reference_price = models.IntegerField('기준가', default=0)
 
     # 시세 상승 조건
@@ -36,3 +36,21 @@ class OrderCondition(models.Model):
 
     def __str__(self):
         return '{} - {}'.format(self.user, self.coin)
+
+
+class Order(models.Model):
+    class StatusChoices(models.IntegerChoices):
+        DONE = (0, '완료')
+        FAIL = (1, '실패')
+        CANCEL = (2, '취소')
+
+    condition = models.ForeignKey(OrderCondition, related_name='condition', on_delete=models.CASCADE)
+    uuid = models.CharField('주문 고유번호', max_length=40, unique=True)
+    status = models.IntegerField('주무 상태', choices=StatusChoices.choices, default=0)
+    info = JSONField(default=dict, blank=True, verbose_name='주문 정보')
+
+    class Meta:
+        db_table = 'order'
+
+    def __str__(self):
+        return '{}({})'.format(self.uuid[:5] + '...', self.get_status_display())
