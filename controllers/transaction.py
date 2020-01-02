@@ -14,23 +14,9 @@ class TransactionController:
     """
 
     def __init__(self, condition):
-        self.__is_active = threading.Event()
         self.condition = condition
         self.base_url = 'https://api.upbit.com'
         self.current_price = None
-
-    @property
-    def is_active(self):
-        return self.__is_active
-
-    @is_active.setter
-    def is_active(self):
-        """
-        전달 받은 주문 조건의 실행 상태(is_active)가 False 인 경우
-        loop 중단을 위해 threading.Event() 객체를 False 로  전환
-        """
-        if not self.condition.is_active:
-            self.__is_active = self.__is_active.set()
 
     # 코인 시세 조회
     def get_coin_price(self):
