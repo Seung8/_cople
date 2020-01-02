@@ -1,5 +1,7 @@
 import json
+import time
 import requests
+from django.utils import timezone
 
 
 class TransactionController:
@@ -13,7 +15,6 @@ class TransactionController:
     def __init__(self, condition):
         self.condition = condition
         self.base_url = 'https://api.upbit.com'
-        self.current_price = None
 
     # 코인 시세 조회
     def get_coin_price(self):
@@ -21,13 +22,31 @@ class TransactionController:
         params = {'markets': self.condition.coin.code}
         response = requests.get(url, params=params)
 
-        # 시세 조회에 성공한 경우에만 코인 가격 리턴
-        if response.status_code == 200:
-            result = json.loads(response.text)
-            price = result[0].get('trade_price')
-            self.current_price = price
-        else:
+        if response.status_code != 200:
+            self.condition.is_active = False
+            self.condition.modified_at = timezone.localtime()
+            self.condition.save(update_fields=['is_active', 'modified_at'])
+
             # todo: 추후 로깅으로 대체
             print(response.text)
 
-        return self.current_price
+        result = json.loads(response.text)
+        price = result[0]['trade_price']
+
+        return price
+
+    # 매수
+    def buy(self):
+        pass
+
+    # 매도
+    def sell(self):
+        pass
+
+    # 자동 감시 주문 로직 실행
+    def run(self):
+        while True:
+            time.sleep(1)
+
+            if not self.condition.is_active:
+                break
