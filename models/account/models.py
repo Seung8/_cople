@@ -65,4 +65,4 @@ class UserAPIInfo(models.Model):
         db_table = 'user_api_info'
 
     def __str__(self):
-        return self.user
+        return '{}({})'.format(self.user.name, self.user.email)
