@@ -17,6 +17,7 @@ class TransactionController:
         self.condition_id = condition_id
         self.base_url = 'https://api.upbit.com'
 
+    # 주문 조건 객체 조회
     def get_condition(self):
         condition = None
 
