@@ -2,6 +2,7 @@ from django.conf import settings
 from django.contrib.postgres.fields import ArrayField, JSONField
 from django.db import models
 
+from models.transaction.tasks import observe_condition
 from ..market.models import Coin
 
 
@@ -36,6 +37,13 @@ class OrderCondition(models.Model):
 
     def __str__(self):
         return '{} - {}'.format(self.user, self.coin)
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        try:
+            observe_condition.delay(self.pk)
+        except Exception as e:
+            print('예외 발생: ', e)
 
 
 class Order(models.Model):

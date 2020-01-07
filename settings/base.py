@@ -14,6 +14,16 @@ secret_settings_prod = json.loads(open(os.path.join(SECRET_DIR, 'settings_prod.j
 # secret settings
 SECRET_KEY = secret_settings_common['django']['secret_key']
 
+# for celery
+CELERY_RESULT_BACKEND = 'django-db'
+CELERY_CACHE_BACKEND = 'django-cache'
+CELERY_TIMEZONE = 'Asia/Seoul'
+
+# celery result serializer
+CELERY_ACCEPT_CONTENT = ['application/json']
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TASK_SERIALIZER = 'json'
+
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -27,6 +37,7 @@ INSTALLED_APPS = [
     'models.account',
     'models.transaction',
     'models.market',
+    'django_celery_results',
 ]
 
 MIDDLEWARE = [

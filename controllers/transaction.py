@@ -47,6 +47,7 @@ class TransactionController:
     def run(self):
         while True:
             time.sleep(1)
+            print('async function is working!')
 
             if not self.condition.is_active:
                 break
