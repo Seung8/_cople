@@ -2,30 +2,48 @@ import json
 import time
 import requests
 from django.utils import timezone
+from django.apps import apps
 
 
 class TransactionController:
     """
-    주문 조건(OrderCondition)을 받아 거래를 처리하는 컨트롤러
+    주문 조건(OrderCondition)의 id를 받아 거래를 처리하는 컨트롤러
 
     특정 코인을 기준으로 매 초마다 시세를 조회하고
     기준에 따라 매수, 매도를 실행
     """
 
-    def __init__(self, condition):
-        self.condition = condition
+    def __init__(self, condition_id):
+        self.condition_id = condition_id
         self.base_url = 'https://api.upbit.com'
+
+    def get_condition(self):
+        condition = None
+
+        try:
+            model = apps.get_model('transaction', 'OrderCondition')
+            condition = model.objects.get(id=self.condition_id)
+        except Exception as e:
+            # todo: 추후 로깅 대체
+            print(e)
+
+        return condition
 
     # 코인 시세 조회
     def get_coin_price(self):
+        condition = self.get_condition()
+
+        if not condition:
+            return None
+
         url = self.base_url + '/v1/ticker'
-        params = {'markets': self.condition.coin.code}
+        params = {'markets': condition.coin.code}
         response = requests.get(url, params=params)
 
         if response.status_code != 200:
-            self.condition.is_active = False
-            self.condition.modified_at = timezone.localtime()
-            self.condition.save(update_fields=['is_active', 'modified_at'])
+            condition.is_active = False
+            condition.modified_at = timezone.localtime()
+            condition.save(update_fields=['is_active', 'modified_at'])
 
             # todo: 추후 로깅으로 대체
             print(response.text)
@@ -47,7 +65,9 @@ class TransactionController:
     def run(self):
         while True:
             time.sleep(1)
-            print('async function is working!')
+            condition = self.get_condition()
 
-            if not self.condition.is_active:
+            if not condition or not condition.is_active:
                 break
+
+            print('async function is working!')
