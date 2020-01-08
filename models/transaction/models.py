@@ -48,19 +48,23 @@ class OrderCondition(models.Model):
 
 class Order(models.Model):
     """주문 조건의 개별 주문 기록"""
-    class StatusChoices(models.IntegerChoices):
-        DONE = (0, '완료')
-        FAIL = (1, '실패')
-        CANCEL = (2, '취소')
+    DONE, FAIL, CANCEL = 0, 1, 2
+    STATUS_CHOICE = (
+        (DONE, '완료'),
+        (FAIL, '실패'),
+        (CANCEL, '취소'),
+    )
 
-    class TypeChoices(models.IntegerChoices):
-        BUY = (0, '매수')
-        SELL = (1, '매도')
+    BUY, SELL = 0, 1
+    TYPE_CHOICES = (
+        (BUY, '매수'),
+        (SELL, '매도'),
+    )
 
     condition = models.ForeignKey(OrderCondition, related_name='condition', on_delete=models.CASCADE)
     uuid = models.CharField('주문 고유번호', max_length=40, unique=True)
-    status = models.IntegerField('주무 상태', choices=StatusChoices.choices, default=0)
-    type = models.IntegerField('주문 유형', choices=TypeChoices.choices)
+    status = models.IntegerField('주무 상태', choices=STATUS_CHOICE, default=0)
+    type = models.IntegerField('주문 유형', choices=TYPE_CHOICES)
     valance = models.FloatField('주문 개수', default=0.0)
     price = models.FloatField('주문가', default=0.0)
     extra = JSONField(default=dict, blank=True, verbose_name='부가정보')
