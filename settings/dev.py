@@ -5,4 +5,4 @@ ALLOWED_HOSTS = ['*']
 
 DATABASES = secret_settings_dev['databases']
 
-CELERY_BROKER_URL = 'redis://localhost:6379'
+CELERY_BROKER_URL = secret_settings_dev['redis-host']

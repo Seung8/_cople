@@ -22,4 +22,4 @@ class Coin(models.Model):
         ordering = ['-name_ko']
 
     def __str__(self):
-        return '{}({})'.format(self.name_ko, self.name_en)
+        return '{}({})'.format(self.name_ko, self.code)

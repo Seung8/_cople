@@ -38,11 +38,31 @@ class OrderCondition(models.Model):
     def __str__(self):
         return '{} - {}'.format(self.user, self.coin)
 
+    @property
+    def total_buy_valance(self, start=None, end=None):
+        """
+        start 원에서 end 원 사이의 총 순매수량
+
+        start, end 조건이 있는 경우 해당 범위의 총 매수량을 리턴하고 그렇지 않은 경우 총 매수량을 리턴
+        만약 매수 후 매도처리가 되었다면 해당 조건은 기록으로만 사용하고 query 에서 제외한다.
+        """
+        result = None
+        query = Order.objects.filter(condition_id=self.pk, type=Order.BUY, status=Order.DONE, is_sold=False)
+
+        if query:
+            if start and end:
+                query = query.filter(price__gte=start, price__lte=end)
+            items = list(query.values_list('valance', flat=True))
+            result = sum(items)
+
+        return result
+
     def save(self, *args, **kwargs):
-        super().save(*args, **kwargs)
+        super(self, OrderCondition).save(*args, **kwargs)
         try:
-            observe_condition.delay(self.pk)
+            observe_condition.delay(self.pk, self.user_id)
         except Exception as e:
+            # todo: 추후 로깅 대체
             print('예외 발생: ', e)
 
 
@@ -61,13 +81,15 @@ class Order(models.Model):
         (SELL, '매도'),
     )
 
-    condition = models.ForeignKey(OrderCondition, related_name='condition', on_delete=models.CASCADE)
+    condition = models.ForeignKey(OrderCondition, related_name='orders', on_delete=models.CASCADE)
     uuid = models.CharField('주문 고유번호', max_length=40, unique=True)
     status = models.IntegerField('주무 상태', choices=STATUS_CHOICE, default=0)
     type = models.IntegerField('주문 유형', choices=TYPE_CHOICES)
     valance = models.FloatField('주문 개수', default=0.0)
-    price = models.FloatField('주문가', default=0.0)
+    price = models.FloatField('개당 주문가', default=0.0)
     extra = JSONField(default=dict, blank=True, verbose_name='부가정보')
+    is_sold = models.BooleanField('매수 후 매도 전환 여부', default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         db_table = 'order'
