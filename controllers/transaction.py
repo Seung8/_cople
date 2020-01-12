@@ -25,14 +25,20 @@ class TransactionController:
         self.__request_url = 'https://api.upbit.com'
 
     @property
-    def condition(self):
+    def request_url(self):
+        return self.__request_url
+
+    @request_url.setter
+    def request_url(self, sub):
+        self.__request_url = self.__request_url + sub
+
+    def get_condition(self):
         """주문 조건 객체 반환 """
         model = apps.get_model('transaction', 'OrderCondition')
 
         return model.objects.filter(id=self.condition_id).first()
 
-    @property
-    def api_keys(self):
+    def get_api_keys(self):
         """주문 요청자의 액세스 키와 시크릿 키를 튜플형으로 반환"""
         model = apps.get_model('account', 'UserAPIInfo')
         api_info = model.objects.filter(user_id=self.user_id, is_active=True).first()
@@ -42,22 +48,13 @@ class TransactionController:
 
         return api_info.access_key, api_info.secret_key
 
-    @property
-    def request_url(self):
-        return self.__request_url
-
-    @request_url.setter
-    def request_url(self, sub):
-        self.__request_url = self.__request_url + sub
-
     def get_coin_price(self):
         """주문 조건에 등록된 코인의 시세 조회"""
         self.request_url = '/v1/ticker'
 
-        params = {'markets': self.condition.coin.code}
+        condition = self.get_condition()
+        params = {'markets': condition.coin.code}
         response = requests.get(self.request_url, params=params)
-
-        condition = self.condition
 
         # 가격 조회에 실패하면 해당 예외를 출력(로깅)하고 즉시 while 루프 탈출
         if response.status_code != 200:
@@ -79,7 +76,7 @@ class TransactionController:
         """
         주문을 위한 payload 데이터 설정
         """
-        api_keys = self.api_keys
+        api_keys = self.get_api_keys()
 
         query_string = urlencode(query).encode()
         hash_data = hashlib.sha512()
@@ -126,7 +123,7 @@ class TransactionController:
         }
         """
         while True:
-            condition = self.condition
+            condition = self.get_condition()
             if not condition.is_active:
                 break
             print('async function is working!')
