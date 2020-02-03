@@ -2,21 +2,15 @@ from django.conf import settings
 from django.contrib.postgres.fields import ArrayField, JSONField
 from django.db import models
 
-from models.transaction.tasks import observe_condition
 from ..market.models import Coin
 
 
 class OrderCondition(models.Model):
-    """
-    매수/매도 주문 조건
+    """매수/매도 주문 조건"""
 
-    생성 시 시세 매 초마다 조회 후 로직 실행
-    시세 상승으로 인하여 매도(총 구매 개수 -1개)가 일어난 경우
-    해당 조건은 비활성화하고 새로운 조건을 생성하여 새로 루프를 실행
-    """
     user = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='user', on_delete=models.CASCADE)
     coin = models.ForeignKey(Coin, related_name='coin', on_delete=models.CASCADE)
-    reference_price = models.IntegerField('기준가', default=0)
+    ref_price = models.IntegerField('기준가', default=0)
 
     # 시세 상승 조건
     rise_value = models.IntegerField('상승 값', default=0)
@@ -25,10 +19,14 @@ class OrderCondition(models.Model):
     # 시세 하락 조건
     fall_value = models.IntegerField('하락 값', default=0)
     fall_ratio = models.BooleanField('하락 값 %여부', default=True)
-    buy_amount = ArrayField(models.IntegerField(), verbose_name='매수량(1,2,3... 형태로 입력)')
-    bought_amount = models.IntegerField('총 매수량', default=0)
 
+    # 구매 예정 개수
+    buy_amount = ArrayField(models.IntegerField(), verbose_name='매수량(1,2,3... 형태로 입력)')
+    coin_amount = models.IntegerField('총 코인 보유량', default=0)
+
+    # 비동기 로직 동작 여부
     is_active = models.BooleanField('로직 실행', default=True)
+
     created_at = models.DateTimeField(auto_now_add=True)
     modified_at = models.DateTimeField(auto_now=True)
 
@@ -39,40 +37,23 @@ class OrderCondition(models.Model):
         return '{} - {}'.format(self.user, self.coin)
 
     @property
-    def total_buy_valance(self, start=None, end=None):
-        """
-        start 원에서 end 원 사이의 총 순매수량
-
-        start, end 조건이 있는 경우 해당 범위의 총 매수량을 리턴하고 그렇지 않은 경우 총 매수량을 리턴
-        만약 매수 후 매도처리가 되었다면 해당 조건은 기록으로만 사용하고 query 에서 제외한다.
-        """
-        result = None
-        query = Order.objects.filter(condition_id=self.pk, type=Order.BUY, status=Order.DONE, is_sold=False)
-
-        if query:
-            if start and end:
-                query = query.filter(price__gte=start, price__lte=end)
-            items = list(query.values_list('valance', flat=True))
-            result = sum(items)
-
-        return result
+    def untreated_orders(self):
+        """미체결 주문 목록 반환"""
+        return Order.objects.filter(condition_id=self.pk, status=Order.WAIT)
 
     def save(self, *args, **kwargs):
         super(self, OrderCondition).save(*args, **kwargs)
-        try:
-            observe_condition.delay(self.pk, self.user_id)
-        except Exception as e:
-            # todo: 추후 로깅 대체
-            print('예외 발생: ', e)
 
 
 class Order(models.Model):
     """주문 조건의 개별 주문 기록"""
-    DONE, FAIL, CANCEL = 0, 1, 2
+
+    WAIT, DONE, FAIL, CANCEL = 0, 1, 2, 3
     STATUS_CHOICE = (
-        (DONE, '완료'),
-        (FAIL, '실패'),
-        (CANCEL, '취소'),
+        (WAIT, '체결대기'),
+        (DONE, '체결완료'),
+        (FAIL, '주문실패'),
+        (CANCEL, '주문취소'),
     )
 
     BUY, SELL = 0, 1
@@ -81,15 +62,23 @@ class Order(models.Model):
         (SELL, '매도'),
     )
 
-    condition = models.ForeignKey(OrderCondition, related_name='orders', on_delete=models.CASCADE)
+    condition = models.ForeignKey(
+        OrderCondition,
+        related_name='orders',
+        on_delete=models.CASCADE,
+        verbose_name='주문 조건'
+    )
+
     uuid = models.CharField('주문 고유번호', max_length=40, unique=True)
     status = models.IntegerField('주무 상태', choices=STATUS_CHOICE, default=0)
     type = models.IntegerField('주문 유형', choices=TYPE_CHOICES)
     valance = models.FloatField('주문 개수', default=0.0)
     price = models.FloatField('개당 주문가', default=0.0)
+
     extra = JSONField(default=dict, blank=True, verbose_name='부가정보')
-    is_sold = models.BooleanField('매수 후 매도 전환 여부', default=False)
+
     created_at = models.DateTimeField(auto_now_add=True)
+    modified_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         db_table = 'order'
