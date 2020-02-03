@@ -46,11 +46,23 @@ class User(AbstractBaseUser, PermissionsMixin):
     def __str__(self):
         return '{}({})'.format(self.name, self.email)
 
+    @property
+    def api_keys(self):
+        """
+        유저 API 정보를 튜플형으로 반환
+
+        return: (액세스키, 시크릿키)
+        """
+        api_info = UserAPIInfo.objects.filter(user_id=self.pk, is_active=True).first()
+
+        if not api_info:
+            return None, None
+        return api_info.access_key, api_info.secret_key
+
 
 class UserAPIInfo(models.Model):
-    """
-    API 정보 기록 테이블
-    """
+    """API 정보 기록 테이블"""
+
     user = models.ForeignKey(User, on_delete=models.CASCADE)
 
     access_key = models.CharField(max_length=80)

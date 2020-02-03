@@ -18,6 +18,7 @@ SECRET_KEY = secret_settings_common['django']['secret_key']
 CELERY_RESULT_BACKEND = 'django-db'
 CELERY_CACHE_BACKEND = 'django-cache'
 CELERY_TIMEZONE = 'Asia/Seoul'
+CELERY_ENABLE_UTC = False
 
 # celery result serializer
 CELERY_ACCEPT_CONTENT = ['application/json']
@@ -35,9 +36,10 @@ INSTALLED_APPS = [
     # custom
     'django_extensions',
     'models.account',
-    'models.transaction',
+    'models.order',
     'models.market',
     'django_celery_results',
+    'django_celery_beat',
 ]
 
 MIDDLEWARE = [
