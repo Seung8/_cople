@@ -11,7 +11,6 @@ chardet==3.0.4
 decorator==4.4.1
 defusedxml==0.6.0
 Django==2.2.9
-django-celery-beat==1.6.0
 django-celery-results==1.1.2
 django-cors-headers==3.2.1
 django-extensions==2.2.5

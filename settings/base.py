@@ -25,6 +25,7 @@ CELERY_ACCEPT_CONTENT = ['application/json']
 CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TASK_SERIALIZER = 'json'
 
+
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -39,7 +40,6 @@ INSTALLED_APPS = [
     'models.order',
     'models.market',
     'django_celery_results',
-    'django_celery_beat',
 ]
 
 MIDDLEWARE = [
