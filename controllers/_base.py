@@ -1,7 +1,6 @@
 import hashlib
 import uuid
 import jwt
-import requests
 
 from abc import ABC
 from urllib.parse import urlencode
@@ -18,11 +17,6 @@ class RequestController(ABC):
     @property
     def request_url(self):
         return self.__request_url
-
-    @request_url.setter
-    def request_url(self, sub_url):
-        """요청 주소 설정"""
-        self.__request_url = self.request_url + sub_url
 
     def set_headers(self, access_key, secret_key, params=None):
         """인증된 요청을 위한 헤더 설정"""

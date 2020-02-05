@@ -4,8 +4,11 @@ from django.db import models
 
 
 class CustomUserManager(BaseUserManager):
-    def create_user(self, email, password, **kwargs):
-        user = self.model(email=self.normalize_email(email))
+    def create_user(self, email, name, password, **kwargs):
+        user = self.model(
+            email=self.normalize_email(email),
+            name=name
+        )
 
         if password:
             user.set_password(password)
@@ -14,8 +17,8 @@ class CustomUserManager(BaseUserManager):
 
         return user
 
-    def create_superuser(self, email, password):
-        super_user = self.create_user(email, password)
+    def create_superuser(self, email, password, name):
+        super_user = self.create_user(email, name, password)
         super_user.is_admin = True
         super_user.is_staff = True
         super_user.is_superuser = True
