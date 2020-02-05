@@ -16,9 +16,9 @@ class CoinController(RequestController):
         if not code or not coin:
             raise ValueError('존재하지 않는 코인({})입니다.'.format(code))
 
-        self.request_url = '/v1/ticker'
+        request_url = self.request_url + '/v1/ticker'
         query_string = {'markets': code}
-        response = requests.get(self.request_url, params=query_string)
+        response = requests.get(request_url, params=query_string)
         data = json.loads(response.text)
 
         if response.status_code != 200:
@@ -28,8 +28,8 @@ class CoinController(RequestController):
 
     def get_coins(self):
         """거래 가능한 코인 목록 조회"""
-        self.request_url = '/v1/market/all'
-        response = requests.get(self.request_url)
+        request_url = self.request_url + '/v1/market/all'
+        response = requests.get(request_url)
 
         if response.status_code == 200:
             data = json.loads(response.text)

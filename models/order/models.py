@@ -2,6 +2,7 @@ from django.conf import settings
 from django.contrib.postgres.fields import ArrayField, JSONField
 from django.db import models
 
+from models.order.tasks import observe_coin_price
 from ..market.models import Coin
 
 
@@ -25,7 +26,7 @@ class OrderCondition(models.Model):
     coin_amount = models.IntegerField('총 코인 보유량', default=0)
 
     # 비동기 로직 동작 여부
-    is_active = models.BooleanField('로직 실행', default=True)
+    is_active = models.BooleanField('로직 실행', default=False)
 
     created_at = models.DateTimeField(auto_now_add=True)
     modified_at = models.DateTimeField(auto_now=True)
@@ -33,20 +34,30 @@ class OrderCondition(models.Model):
     class Meta:
         db_table = 'order_condition'
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.initial_created = True
+        self.before_is_active = self.is_active
+
     def __str__(self):
         return '{} - {}'.format(self.user, self.coin)
 
-    @property
-    def untreated_orders(self):
-        """미체결 주문 목록 반환"""
-        return Order.objects.filter(condition_id=self.pk, status=Order.WAIT)
-
     def save(self, *args, **kwargs):
-        super(self, OrderCondition).save(*args, **kwargs)
+        # 최초 생성 시
+        if not self.pk:
+            print('최초 생성임')
+            self.is_active = True
+
+        super().save(*args, **kwargs)
+
+        # 중복 감시를 피하기 위해 로직 실행여부(is_active)가 False => True 인 경우에만
+        # 자동 감시 주문 로직 실행
+        if not self.before_is_active and self.is_active:
+            observe_coin_price.delay(condition_id=self.pk)
 
 
 class Order(models.Model):
-    """주문 조건의 개별 주문 기록"""
+    """주문 조건의 개별 주문"""
 
     WAIT, DONE, FAIL, CANCEL = 0, 1, 2, 3
     STATUS_CHOICE = (
