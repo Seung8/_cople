@@ -9,9 +9,8 @@ from urllib.parse import urlencode
 class RequestController(ABC):
     """최상위 요청 컨트롤러"""
 
-    def __init__(self, query=None):
+    def __init__(self):
         self.__request_url = 'https://api.upbit.com'
-        self.__query = query
         self.__headers = {}
 
     @property
