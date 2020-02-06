@@ -13,8 +13,7 @@ class OrderController(RequestController):
         super().__init__()
         self.condition_id = condition_id
 
-    @property
-    def condition(self):
+    def get_condition(self):
         condition = OrderCondition.objects.select_related('coin').filter(id=self.condition_id).first()
 
         if not condition:
@@ -43,14 +42,14 @@ class OrderController(RequestController):
         if not isinstance(price, float):
             raise TypeError('주문 가격(price)는 반드시 float()형이어야 합니다.')
 
-        condition = self.condition
+        condition = self.get_condition()
         api_keys = condition.user.api_keys
 
         if not api_keys:
             raise Exception('인증 정보가 올바르지 않습니다.')
 
         query = {
-            'market': self.condition.coin.code,
+            'market': condition.coin.code,
             'side': action,
             'volume': str(volume),
             'price': str(100.0),
