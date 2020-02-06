@@ -11,7 +11,7 @@ class OrderCondition(models.Model):
 
     user = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='user', on_delete=models.CASCADE)
     coin = models.ForeignKey(Coin, related_name='coin', on_delete=models.CASCADE)
-    ref_price = models.IntegerField('기준가', default=0)
+    buy_price = models.IntegerField('최초 구매 설정가', default=0)
 
     # 시세 상승 조건
     rise_value = models.IntegerField('상승 값', default=0)

@@ -41,3 +41,4 @@ class RequestController(ABC):
         self.__headers.update({
             'Authorization': 'Bearer {}'.format(jwt_token)
         })
+        return self.__headers

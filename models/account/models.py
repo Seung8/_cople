@@ -56,17 +56,17 @@ class User(AbstractBaseUser, PermissionsMixin):
 
         return: (액세스키, 시크릿키)
         """
-        api_info = UserAPIInfo.objects.filter(user_id=self.pk, is_active=True).first()
+        api_info = UserAPIInfo.objects.filter(user_id=self.pk, is_active=True)
 
         if not api_info:
-            return None, None
-        return api_info.access_key, api_info.secret_key
+            return None
+        return api_info.values('access_key', 'secret_key')[0]
 
 
 class UserAPIInfo(models.Model):
     """API 정보 기록 테이블"""
 
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, related_name='api_info', on_delete=models.CASCADE)
 
     access_key = models.CharField(max_length=80)
     secret_key = models.CharField(max_length=80)
