@@ -100,6 +100,7 @@ def observe_coin_price(condition_id: str):
                 extra=response
             )
 
+            # 새 주문 생성
             _condition.objects.create(
                 user_id=condition.user.id,
                 coin_id=condition.coin.id,
