@@ -14,6 +14,7 @@ def observe_coin_price(condition_id: str):
     """자동 감시 주문"""
     cc = CoinController()
     oc = OrderController(condition_id=condition_id)
+    order = apps.get_model('order', 'Order')
 
     while True:
         condition = oc.get_condition()
@@ -52,13 +53,22 @@ def observe_coin_price(condition_id: str):
             response = oc.request_order(action='bid', volume=volume)
             bought_price = response.get('price')
 
+            # 구매 이력(Order) 생성
+            _created = order.objects.create(
+                uuid=response.get('uuid'),
+                status=order.DONE,
+                type=order.BUY,
+                valance=volume,
+                price=response.get('price'),
+                extra=response
+            )
+
             # 구매 예정 개수 목록에서 구매한 개수는 제거, 매수한 가격으로 기준가 업데이트
             condition.buy_amount = _buy_amount
             condition.ref_price = bought_price
             condition.save()
 
         # 주문 내역 쿼리
-        order = apps.get_model('order', 'Order')
         orders = order.objects.select_related('condition__coin').filter(
             condition__coin__code=condition.coin.code, price__lte=cur_price
         )
