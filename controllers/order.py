@@ -1,9 +1,9 @@
 import json
 
 import requests
+from django.apps import apps
 
 from controllers._base import RequestController
-from models.order.models import OrderCondition
 
 
 class OrderController(RequestController):
@@ -14,22 +14,16 @@ class OrderController(RequestController):
         self.condition_id = condition_id
 
     def get_condition(self):
-        condition = OrderCondition.objects.select_related('coin').filter(id=self.condition_id).first()
+        model = apps.get_model('order.OrderCondition')
+        condition = model.objects.select_related('coin').prefetch_related('user__api_info').filter(
+            id=self.condition_id, is_active=True
+        ).first()
 
         if not condition:
             raise Exception('존재하지 않는 주문 조건({})입니다.'.format(self.condition_id))
         return condition
 
-    def get_orders(self):
-        """주문 목록 조회"""
-        pass
-
-    def cancel_order(self, uuid: list):
-        """주문 취소 접수"""
-        # 주문 uuid 를 list 형태로 받아서 순차 처리
-        pass
-
-    def request_order(self, action: str, volume: float, price: float):
+    def request_order(self, action: str, volume: float):
         """매수(bid)/매도(ask) 주문 요청"""
         allowed_actions = ['bid', 'ask']
 
@@ -39,13 +33,10 @@ class OrderController(RequestController):
         if not isinstance(volume, float):
             raise TypeError('주문 개수(volume)는 반드시 float()형이어야 합니다.')
 
-        if not isinstance(price, float):
-            raise TypeError('주문 가격(price)는 반드시 float()형이어야 합니다.')
-
         condition = self.get_condition()
-        api_keys = condition.user.api_keys
+        api_info = condition.user.api_info.first()
 
-        if not api_keys:
+        if not api_info:
             raise Exception('인증 정보가 올바르지 않습니다.')
 
         query = {
@@ -53,11 +44,19 @@ class OrderController(RequestController):
             'side': action,
             'volume': str(volume),
             'price': str(100.0),
-            'ord_type': 'limit'
+            # 지정가로 수정할 경우 price 인자 추가 후 활성화 'ord_type': 'limit'
         }
 
-        access_key = api_keys['access_key']
-        secret_key = api_keys['secret_key']
+        # 매수인 경우 주문 타입(ord_type)을 시장가 매수(price)로 설정
+        if action == 'bid':
+            query.update({'ord_type': 'price'})
+
+        # 매도인 경우 주문 타입(ord_type)을 시장가 매도(limit)로 설정
+        else:
+            query.update({'ord_type': 'market'})
+
+        access_key = api_info.access_key
+        secret_key = api_info.secret_key
 
         request_url = self.request_url + '/v1/orders'
         headers = self.set_headers(access_key, secret_key, params=query)

@@ -9,7 +9,6 @@ class OrderConditionAdmin(admin.ModelAdmin):
     )
     search_fields = ('user__name', 'user__email',)
     raw_id_fields = ('user', 'coin',)
-    readonly_fields = ('coin_amount',)
 
 
 @admin.register(Order)
