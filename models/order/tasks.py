@@ -113,6 +113,7 @@ def observe_coin_price(condition_id: str):
                 is_active=True
             )
 
+            # 기존 주문 조건 비활성화 및 감시 로직 종료
             condition.is_active = False
             condition.save()
             break
