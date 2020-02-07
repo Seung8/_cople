@@ -15,7 +15,7 @@ class OrderController(RequestController):
 
     def get_condition(self):
         model = apps.get_model('order.OrderCondition')
-        condition = model.objects.select_related('coin').prefetch_related('user__api_info').filter(
+        condition = model.objects.select_related('coin', 'user').prefetch_related('user__api_info').filter(
             id=self.condition_id, is_active=True
         ).first()
 

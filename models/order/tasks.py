@@ -14,11 +14,22 @@ def observe_coin_price(condition_id: str):
     """자동 감시 주문"""
     cc = CoinController()
     oc = OrderController(condition_id=condition_id)
-    order = apps.get_model('order', 'Order')
+    loop_count = 0
+
+    _order = apps.get_model('order', 'Order')
+    _condition = apps.get_model('order', 'OrderCondition')
+    _buy_amount = None
 
     while True:
+        loop_count += 1
+
         condition = oc.get_condition()
-        _buy_amount = condition.buy_amount
+        # 차감하면서 사용할 구매 개수 목록
+        available_amount = condition.buy_amount.copy()
+
+        # 최초 순회 시 새 조건(OrderCondition)에 사용할 구매 개수 목록 저장
+        if loop_count == 1:
+            _buy_amount = condition.buy_amount
 
         # 감시 중 주문 조건 비활성화 시 로직 중단
         if not condition.is_active:
@@ -29,7 +40,7 @@ def observe_coin_price(condition_id: str):
             break
 
         # 더이상 구매할 개수가 없는 경우 로직 중단
-        if not len(_buy_amount) > 0:
+        if not len(available_amount) > 0:
             print('[{}] 매수 개수 소진으로 로직 중단'.format(timezone.now()))
             condition.is_active = False
             condition.save()
@@ -49,27 +60,27 @@ def observe_coin_price(condition_id: str):
 
         # 현재 코인 가격이 설정값 이상 하락한 경우
         if cur_price <= buy_price:
-            volume = float(_buy_amount.pop(0))
+            volume = float(available_amount.pop(0))
             response = oc.request_order(action='bid', volume=volume)
             bought_price = response.get('price')
 
             # 구매 이력(Order) 생성
-            _created = order.objects.create(
+            _order.objects.create(
                 uuid=response.get('uuid'),
-                status=order.DONE,
-                type=order.BUY,
+                status=_order.DONE,
+                type=_order.BUY,
                 valance=volume,
                 price=response.get('price'),
                 extra=response
             )
 
             # 구매 예정 개수 목록에서 구매한 개수는 제거, 매수한 가격으로 기준가 업데이트
-            condition.buy_amount = _buy_amount
+            condition.buy_amount = available_amount
             condition.ref_price = bought_price
             condition.save()
 
         # 주문 내역 쿼리
-        orders = order.objects.select_related('condition__coin').filter(
+        orders = _order.objects.select_related('condition__coin').filter(
             condition__coin__code=condition.coin.code, price__lte=cur_price
         )
 
@@ -80,14 +91,27 @@ def observe_coin_price(condition_id: str):
             response = oc.request_order(action='ask', volume=float(volume))
 
             # 매도 주문 기록(Order) 생성
-            order.objects.create(
+            _order.objects.create(
                 uuid=response.get('uuid'),
-                status=order.DONE,
-                type=order.SELL,
+                status=_order.DONE,
+                type=_order.SELL,
                 valance=float(volume),
                 price=response.get('price'),
                 extra=response
             )
+
+            _condition.objects.create(
+                user_id=condition.user.id,
+                coin_id=condition.coin.id,
+                ref_price=response.get('price'),
+                rise_value=condition.raise_value,
+                rise_ratio=condition.rise_ratio,
+                fall_value=condition.fall_value,
+                fall_ratio=condition.fall_ratio,
+                buy_amount=_buy_amount,
+                is_active=True
+            )
+
             condition.is_active = False
             condition.save()
             break
