@@ -20,6 +20,7 @@ def observe_coin_price(condition_id: str):
     _condition = apps.get_model('order', 'OrderCondition')
     _buy_amount = None
 
+    # 조건별 감시 루프 실행
     while True:
         loop_count += 1
 
@@ -33,15 +34,16 @@ def observe_coin_price(condition_id: str):
 
         # 감시 중 주문 조건 비활성화 시 로직 중단
         if not condition.is_active:
-            # todo: 주문조건 비활성 알림 전송
-            print('[{}] 주문 조건 비활성화로 로직 중단'.format(timezone.now()))
+            msg = '[{}] 주문 조건 비활성화로 로직 중단'.format(timezone.now())
+            print(msg)
             condition.is_active = False
             condition.save()
             break
 
         # 더이상 구매할 개수가 없는 경우 로직 중단
         if not len(available_amount) > 0:
-            print('[{}] 매수 개수 소진으로 로직 중단'.format(timezone.now()))
+            msg = '[{}] 매수 개수 소진으로 로직 중단'.format(timezone.now())
+            print(msg)
             condition.is_active = False
             condition.save()
             break
@@ -84,8 +86,8 @@ def observe_coin_price(condition_id: str):
             condition__coin__code=condition.coin.code, price__lte=cur_price
         )
 
-        # 주문 내역 중 현재가보다 낮은 가격에 매수한 코인이 있다면 모두 시장가 매수 진행
-        # 매수가 완료되면 기존 로직은 중단시키고 매도 가격으로 새로운 로직 진행
+        # 주문 내역 중 현재가보다 낮은 가격에 매수한 코인이 있다면 모두 시장가 매도 진행
+        # 매도가 완료되면 기존 로직은 중단시키고 매도 가격으로 새로운 로직 진행
         if orders:
             volume = orders.aggregate(volume=Sum('valance'))['volume']
             response = oc.request_order(action='ask', volume=float(volume))
