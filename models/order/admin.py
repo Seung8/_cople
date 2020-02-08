@@ -18,6 +18,7 @@ class OrderAdmin(admin.ModelAdmin):
     )
     raw_id_fields = ('condition',)
     search_fields = ('condition__user__name', 'condition__user__email',)
+    readonly_fields = ('sell_price', 'is_sold',)
 
     def get_user_name(self, obj):
         return obj.condition.user.name

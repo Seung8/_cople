@@ -2,6 +2,7 @@ import json
 
 import requests
 from django.apps import apps
+from django.utils import timezone
 
 from controllers._base import RequestController
 
@@ -23,7 +24,7 @@ class OrderController(RequestController):
             raise Exception('존재하지 않는 주문 조건({})입니다.'.format(self.condition_id))
         return condition
 
-    def request_order(self, action: str, volume: float):
+    def request_order(self, action: str, volume: float, price: float):
         """매수(bid)/매도(ask) 주문 요청"""
         allowed_actions = ['bid', 'ask']
 
@@ -43,17 +44,9 @@ class OrderController(RequestController):
             'market': condition.coin.code,
             'side': action,
             'volume': str(volume),
-            'price': str(100.0),
-            # 지정가로 수정할 경우 price 인자 추가 후 활성화 'ord_type': 'limit'
+            'ord_type': 'limit',
+            'price': str(price)
         }
-
-        # 매수인 경우 주문 타입(ord_type)을 시장가 매수(price)로 설정
-        if action == 'bid':
-            query.update({'ord_type': 'price'})
-
-        # 매도인 경우 주문 타입(ord_type)을 시장가 매도(limit)로 설정
-        else:
-            query.update({'ord_type': 'market'})
 
         access_key = api_info.access_key
         secret_key = api_info.secret_key
@@ -64,7 +57,15 @@ class OrderController(RequestController):
         response = requests.post(request_url, params=query, headers=headers)
         data = json.loads(response.text)
 
+        # 매수인 경우 주문 타입(ord_type)을 지정가 매수(price)로 설정
+        msg_action = '매수' if action == 'bid' else '매도'
+
+        print('\n### [{}] {}주문 요청쿼리: {}'.format(
+            timezone.now(), msg_action, query
+        ))
+
         if response.status_code != 201:
             raise Exception(data)
 
+        print('\n### [{}] {}주문 실행 성공 : {}'.format(timezone.now(), msg_action, data))
         return data
