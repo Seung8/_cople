@@ -11,7 +11,7 @@ class OrderCondition(models.Model):
 
     user = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='user', on_delete=models.CASCADE)
     coin = models.ForeignKey(Coin, related_name='coin', on_delete=models.CASCADE)
-    ref_price = models.IntegerField('기준가', default=0)
+    ref_price = models.IntegerField('기준가(최초 생성 후 절대 수정 금지)', default=0, help_text='최초 생성 이후에 절대 수정 금지')
 
     # 시세 상승 조건
     rise_value = models.IntegerField('상승 값', default=0)
@@ -23,7 +23,6 @@ class OrderCondition(models.Model):
 
     # 구매 예정 개수
     buy_amount = ArrayField(models.IntegerField(), verbose_name='매수량(1,2,3... 형태로 입력)')
-    coin_amount = models.IntegerField('총 코인 보유량', default=0)
 
     # 비동기 로직 동작 여부
     is_active = models.BooleanField('로직 실행', default=False)
@@ -36,7 +35,6 @@ class OrderCondition(models.Model):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.initial_created = True
         self.before_is_active = self.is_active
 
     def __str__(self):
@@ -45,7 +43,6 @@ class OrderCondition(models.Model):
     def save(self, *args, **kwargs):
         # 최초 생성 시
         if not self.pk:
-            print('최초 생성임')
             self.is_active = True
 
         super().save(*args, **kwargs)
