@@ -11,21 +11,26 @@ class OrderCondition(models.Model):
 
     user = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='user', on_delete=models.CASCADE)
     coin = models.ForeignKey(Coin, related_name='coin', on_delete=models.CASCADE)
-    ref_price = models.IntegerField('기준가(최초 생성 후 절대 수정 금지)', default=0, help_text='최초 생성 이후에 절대 수정 금지')
+    ref_price = models.FloatField('기준가', default=0.0, help_text='최초 로직 실행 시 참고가 될 기준가. 생성 이후에 절대 수정 금지')
 
     # 시세 상승 조건
-    rise_value = models.IntegerField('상승 값', default=0)
-    rise_ratio = models.BooleanField('상승값 %여부', default=True)
+    rise_value = models.FloatField('상승 값', default=0.0, help_text='양수 혹은 음수')
+    rise_ratio = models.BooleanField('상승값 %여부', default=True, help_text='% 단위로 상승(매도) 조건 지정 시 체크')
 
     # 시세 하락 조건
-    fall_value = models.IntegerField('하락 값', default=0)
-    fall_ratio = models.BooleanField('하락 값 %여부', default=True)
+    fall_value = models.FloatField('하락 값', default=0.0, help_text='양수 혹은 음수')
+    fall_ratio = models.BooleanField('하락 값 %여부', default=True, help_text='% 단위로 하락(매수) 조건 지정 시 체크')
 
     # 구매 예정 개수
-    buy_amount = ArrayField(models.IntegerField(), verbose_name='매수량(1,2,3... 형태로 입력)')
+    buy_amount = ArrayField(
+        models.FloatField(), verbose_name='매수량', help_text='[1, 2.1, 3.5, 5...] 형태로 양수 혹은 음수를 입력'
+    )
 
     # 비동기 로직 동작 여부
-    is_active = models.BooleanField('로직 실행', default=False)
+    is_active = models.BooleanField(
+        '로직 실행', default=False, help_text='최초 주문 조건 생성 시 자동으로 활성되므로 체크 해제로 둘 것,'
+                                          ' 최초 생성 후 도중에 중단하고 싶은 경우 체크 해제'
+    )
 
     created_at = models.DateTimeField(auto_now_add=True)
     modified_at = models.DateTimeField(auto_now=True)
@@ -82,6 +87,8 @@ class Order(models.Model):
     type = models.IntegerField('주문 유형', choices=TYPE_CHOICES)
     valance = models.FloatField('주문 개수', default=0.0)
     price = models.FloatField('개당 주문가', default=0.0)
+    sell_price = models.FloatField('목표 매도가', default=0.0, help_text='매수인 경우에만 적용')
+    is_sold = models.BooleanField('판매 완료 처리 여부', default=False)
 
     extra = JSONField(default=dict, blank=True, verbose_name='부가정보')
 
